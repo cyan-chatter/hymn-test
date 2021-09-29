@@ -15,7 +15,12 @@ const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
 // const {username, room} = Qs.parse(location.search, { ignoreQueryPrefix:true})
 
+
 const audioGrid = document.getElementById('audio-grid')
+const micbtn = document.getElementById('toggle-mic-btn')
+
+let micmuted = true
+
 const myPeer = new Peer(undefined, {
   host: '/',
   port: '3001'
@@ -34,7 +39,34 @@ navigator.mediaDevices.getUserMedia({
   video: false,
   audio: true
 }).then(stream => {
+  
+  //Stream Object
+  console.log("stream",stream)
+  stream.getTracks().forEach((t) => {
+    console.log("initial disable")
+    if (t.kind === 'audio') t.enabled = false
+  })
   addaudioStream(myaudio, stream)
+
+
+  micbtn.addEventListener('click', ()=>{  
+    micmuted  = !micmuted
+    if(micmuted){
+      console.log('muted') 
+      stream.getTracks().forEach((t) => {
+        console.log("event disable")
+        if (t.kind === 'audio') t.enabled = false
+      })
+    } 
+    else{
+      console.log('unmuted')
+      stream.getTracks().forEach((t) => {
+        console.log("event enable")
+        if (t.kind === 'audio') t.enabled = true
+      })
+    }
+    addaudioStream(myaudio, stream)
+  })
 
   myPeer.on('call', call => {
     console.log("incoming call")
@@ -58,7 +90,7 @@ socket.on('user-disconnected', userId => {
 
 myPeer.on('open', peerId => {
     console.log("peer id at on", peerId)
-    socket.emit('join',{username, room: ROOM_ID, peerId}, (error)=>{
+    socket.emit('join',{username, room: ROOM_ID, peerId, roomname : room}, (error)=>{
         if(error){
             alert(error)
             location.href = '/'

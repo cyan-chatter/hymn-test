@@ -85,6 +85,8 @@ app.get('/lobby/:username', (req,res)=>{
 
 
 app.get('/room/:roomid/:username', (req,res) => {
+    console.log(req.params)
+    console.log(myroomsmap.get(req.params.roomid))
     let room = myroomsmap.get(req.params.roomid).roomname
     console.log(room)
     if(!room) return res.redirect('/')
@@ -109,8 +111,9 @@ io.on('connection', (socket)=>{
         socket.to(user.room).broadcast.emit('user-connected', user.peerId)
         socket.emit('message', generateMessage('', 'Welcome!'))
         socket.broadcast.to(user.room).emit('message', generateMessage('', `${user.username} has joined the chat`))    
+        console.log(options)
         io.to(user.room).emit('roomData', {
-            room: user.room,
+            room: options.roomname,
             users: getUsersInRoom(user.room)
         })
         
