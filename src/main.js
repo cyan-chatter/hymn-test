@@ -20,24 +20,21 @@ const port = process.env.PORT || 3000
 const {generateMessage, generateLocation} = require('./utils/messages')
 const {addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users')
 
-const myrooms = []
+
 const invrooms = []
 
-myrooms.push({
+const generalroom = {
     roomname : 'general', roomid: 'general', roomtype : 'myroom-default', actives : 0
-})
+}
 
-myrooms.push({
+const soloroom = {
     roomname : 'solo', roomid: uuidV4(), roomtype : 'myroom-default', actives : 0
-})
+}
 
-const roomsmap = new Map()
+const myroomsmap = new Map()
 
-roomsmap.set(myrooms[0].roomid, 'general')
-roomsmap.set(myrooms[1].roomid, 'solo')
-
-
-
+myroomsmap.set(generalroom.roomid,generalroom)
+myroomsmap.set(soloroom.roomid,soloroom)
 
 app.get('/', (req,res) => {
     res.render('index')
@@ -51,8 +48,7 @@ app.post('/newmyroom', (req,res)=>{
     const newroom = {
         roomname, roomid, roomtype, actives
     }
-    myrooms.push(newroom)
-    roomsmap.set(roomid,roomname)
+    myroomsmap.set(roomid,newroom)
     res.send(newroom)
 })
 // app.post('/newinvroom', (req,res)=>{
@@ -63,30 +59,33 @@ app.post('/newmyroom', (req,res)=>{
 //     const newroom = {
 //         roomname, roomid, roomtype, actives
 //     }
-//     invrooms.push(newroom)
+//     invroomsmap.set(roomid,newroom)
 //     res.send(newroom)
 // })
 
 app.post('/lobby', (req,res)=>{
     username = req.body.username
+    const vals = Array.from(myroomsmap.values())
+    console.log(vals)
     res.render('lobby',{
         username: req.body.username,
-        myrooms, 
+        myrooms : vals, 
         invrooms
     })
 })
 
 app.get('/lobby/:username', (req,res)=>{
+    const vals = Array.from(myroomsmap.values())
     res.render('lobby',{
         username : req.params.username,
-        myrooms, 
+        myrooms : vals,  
         invrooms
     })
 })
 
 
 app.get('/room/:roomid/:username', (req,res) => {
-    let room = roomsmap.get(req.params.roomid)
+    let room = myroomsmap.get(req.params.roomid).roomname
     console.log(room)
     if(!room) return res.redirect('/')
     let userdata = {
