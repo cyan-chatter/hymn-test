@@ -20,15 +20,18 @@ const port = process.env.PORT || 3000
 const {generateMessage, generateLocation} = require('./utils/messages')
 const {addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users')
 
+const Player = require('./utils/Player')
 
 const invrooms = []
 
-const generalroom = {
-    roomname : 'general', roomid: 'general', roomtype : 'myroom-default', actives : 0
-}
+const generalroomid = 'general'
+const soloroomid = uuidV4()
 
+const generalroom = {
+    roomname : 'general', roomid: 'general', roomtype : 'myroom-default', actives : 0, player : new Player(generalroomid, 'general')
+}
 const soloroom = {
-    roomname : 'solo', roomid: uuidV4(), roomtype : 'myroom-default', actives : 0
+    roomname : 'solo', roomid: soloroomid, roomtype : 'myroom-default', actives : 0, player : new Player('solo', soloroomid)
 }
 
 const myroomsmap = new Map()
@@ -111,7 +114,11 @@ io.on('connection', (socket)=>{
         socket.to(user.room).broadcast.emit('user-connected', user.peerId)
         socket.emit('message', generateMessage('', 'Welcome!'))
         socket.broadcast.to(user.room).emit('message', generateMessage('', `${user.username} has joined the chat`))    
-        console.log(options)
+        let room = myroomsmap.get(user.room)
+        myroomsmap.set(user.room, {
+            ...room,
+            actives : ++room.actives
+        })
         io.to(user.room).emit('roomData', {
             room: options.roomname,
             users: getUsersInRoom(user.room)
@@ -140,8 +147,12 @@ io.on('connection', (socket)=>{
                 room: user.room,
                 users: getUsersInRoom(user.room)
             })
+            let room = myroomsmap.get(user.room)
+            myroomsmap.set(user.room, {
+                ...room,
+                actives : --room.actives
+            })
         }
-        
     })
     
     socket.on('send-location', (location,callback)=>{
