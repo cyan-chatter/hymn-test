@@ -148,16 +148,31 @@ button:disabled {
     margin-right: 16px;
 }
 
+
 .compose input {
     border: 1px solid #eeeeee;
     width: 100%;
     padding: 12px;
-    margin: 0 16px 0 0;
+    margin: 0 16px 0 16px;
     flex-grow: 1;
 }
 
-.compose button {
+.compose, #command-form button {
     font-size: 14px;
+}
+
+#command-form {
+    width: 80vw;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+#command-form input{
+    border: 5px solid #03b4a6;
+    width: 100%;
+    padding: 12px;
+    margin: 8px 16px 8px 16px;
+    border-radius: 4px;
 }
 
 /* Chat Sidebar Styles */

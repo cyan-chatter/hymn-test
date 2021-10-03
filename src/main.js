@@ -20,6 +20,7 @@ const port = process.env.PORT || 3000
 const {generateMessage, generateLocation} = require('./utils/messages')
 const {addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users')
 
+const commandJob = require('./utils/commands')
 const Player = require('./utils/Player')
 
 const invrooms = []
@@ -160,6 +161,16 @@ io.on('connection', (socket)=>{
         const messageText = `https://google.com/maps?q=${location.latitude},${location.longitude}`
         io.to(user.room).emit('locationMessage', generateLocation(user.username, messageText))
         callback()
+    })
+
+
+    ///////WORK HERE////////////
+    socket.on('send-command',(commandText, callback)=>{   
+        const user = getUser(socket.id)       
+        commandJob(commandText)
+        io.to(user.room).emit('message',generateMessage('Hymn', commandText)) //simply returning the command text for now for testing
+        let data = 'Command Delivered!'
+        callback(data)
     })
 })
 

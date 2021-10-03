@@ -3,6 +3,7 @@
    <title>hymn</title>
    <link rel = "icon" href="/img/favicon.png">
    <link rel = "stylesheet" href="/css/styles.min.css">
+   <link rel = "stylesheet" href="/css/styles.css">
 </head>
 
 <body>
@@ -20,18 +21,20 @@
       </div>
       
       <div class="chat__main">
-         
+         <form id="command-form">
+            <input type="text" name="command_text" class="command-text" placeholder=";)" required autocomplete="off">         
+            <button id="command-send-button">Go</button>
+         </form>
          <div id="messages" class="chat__messages"></div>
-         
          <div class="compose">
             <form id="message-form">
-               <input type="text" name="message_text" placeholder=":-)" required autocomplete="off">
-               <button id="send-button">send</button>
+               <input type="text" name="message_text" placeholder=":)" required autocomplete="off">
+               <button id="send-button">Send</button>
             </form>
             <button id="send-location">Send Location</button>
             <span>.  .</span>
             <button id="toggle-mic-btn">Toggle Mic</button>
-         </div>         
+         </div>
       </div>
    
    </div>

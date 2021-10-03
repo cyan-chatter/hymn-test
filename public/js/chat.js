@@ -15,9 +15,11 @@ const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
 // const {username, room} = Qs.parse(location.search, { ignoreQueryPrefix:true})
 
-
 const audioGrid = document.getElementById('audio-grid')
 const micbtn = document.getElementById('toggle-mic-btn')
+const $commandForm = document.querySelector('#command-form')
+const $commandFormInput = $commandForm.querySelector('input')
+const $commandFormButton = $commandForm.querySelector('button')
 
 let micmuted = true
 
@@ -193,6 +195,24 @@ socket.on('roomData', ({room , users})=>{
         console.log('Message Delivered!')
     })
  })
+
+ $commandForm.addEventListener('submit', (e)=>{
+  e.preventDefault()
+  $commandFormButton.setAttribute('disabled', 'disabled')
+  const commandText = e.target.elements.command_text.value
+  
+  socket.emit('send-command',commandText,(data)=>{
+      $commandFormButton.removeAttribute('disabled')
+      $commandFormInput.value = ''
+      $commandFormInput.focus() 
+      
+      ///////WORK HERE////////////
+      if(data){
+         return console.log(data)    
+      }
+      else console.log('Command Sent! but No Data Received')
+  })
+})
 
  $locationButton.addEventListener('click', ()=>{
      
