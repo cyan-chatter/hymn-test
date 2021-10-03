@@ -163,14 +163,11 @@ io.on('connection', (socket)=>{
         callback()
     })
 
-
-    ///////WORK HERE////////////
     socket.on('send-command',(commandText, callback)=>{   
         const user = getUser(socket.id)       
-        commandJob(commandText)
-        io.to(user.room).emit('message',generateMessage('Hymn', commandText)) //simply returning the command text for now for testing
-        let data = 'Command Delivered!'
-        callback(data)
+        io.to(user.room).emit('message',generateMessage(user.username, commandText)) 
+        commandJob(commandText,io,user.room)
+        callback('Command Delivered!')
     })
 })
 

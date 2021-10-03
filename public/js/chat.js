@@ -199,20 +199,24 @@ socket.on('roomData', ({room , users})=>{
  $commandForm.addEventListener('submit', (e)=>{
   e.preventDefault()
   $commandFormButton.setAttribute('disabled', 'disabled')
-  const commandText = e.target.elements.command_text.value
-  
-  socket.emit('send-command',commandText,(data)=>{
+  const commandText = e.target.elements.command_text.value  
+  socket.emit('send-command',commandText,(log)=>{
       $commandFormButton.removeAttribute('disabled')
       $commandFormInput.value = ''
       $commandFormInput.focus() 
-      
-      ///////WORK HERE////////////
-      if(data){
-         return console.log(data)    
+      if(log){
+         return console.log(log)    
       }
-      else console.log('Command Sent! but No Data Received')
+      else console.log('Command Sent! but No Log Received')
   })
 })
+
+socket.on('execute', (data)=>{
+  console.log(data)
+  //to play the stream from here
+})
+
+
 
  $locationButton.addEventListener('click', ()=>{
      
