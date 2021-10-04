@@ -1,5 +1,5 @@
 //const messages = require("../../src/utils/messages")
-
+//import ss from 'socket.io-stream';
 const socket = io()
 
 //Elements
@@ -196,28 +196,6 @@ socket.on('roomData', ({room , users})=>{
     })
  })
 
- $commandForm.addEventListener('submit', (e)=>{
-  e.preventDefault()
-  $commandFormButton.setAttribute('disabled', 'disabled')
-  const commandText = e.target.elements.command_text.value  
-  socket.emit('send-command',commandText,(log)=>{
-      $commandFormButton.removeAttribute('disabled')
-      $commandFormInput.value = ''
-      $commandFormInput.focus() 
-      if(log){
-         return console.log(log)    
-      }
-      else console.log('Command Sent! but No Log Received')
-  })
-})
-
-socket.on('execute', (data)=>{
-  console.log(data)
-  //to play the stream from here
-})
-
-
-
  $locationButton.addEventListener('click', ()=>{
      
      if(!navigator.geolocation){
@@ -239,7 +217,66 @@ socket.on('execute', (data)=>{
             console.log('Location Shared!')
             $locationButton.removeAttribute('disabled')
            })      
-        })
-     
+        })     
  })
+
+//music handling
+
+$commandForm.addEventListener('submit', (e)=>{
+  e.preventDefault()
+  $commandFormButton.setAttribute('disabled', 'disabled')
+  const commandText = e.target.elements.command_text.value  
+  socket.emit('send-command',commandText,(log)=>{
+      $commandFormButton.removeAttribute('disabled')
+      $commandFormInput.value = ''
+      $commandFormInput.focus() 
+      if(log){
+         return console.log(log)    
+      }
+      else console.log('Command Sent! but No Log Received')
+  })
+})
+
+
+// socket.on('playData', async function (chunk) {
+//   console.log("playdata executes",chunk)
+// })
+// socket.on('playEnd', async function (m) {
+//   console.log("playend executes",m)
+// })
+// socket.on('playError', async function (m) {
+//   console.log(chunk)
+// })
+
+let audioCtx;
+let source;
+let songLength;
+
+if(window.webkitAudioContext) {
+  audioCtx = new window.webkitAudioContext();
+} else {
+  audioCtx = new window.AudioContext();
+}
+
+//to send a file
+socket.on('play', (data)=>{
+  source = audioCtx.createBufferSource();
+  audioCtx.decodeAudioData(data.buffer, function(buffer) {
+    myBuffer = buffer;
+    songLength = buffer.duration;
+    source.buffer = myBuffer;
+    source.connect(audioCtx.destination);
+    source.loop = false;
+  }, function(e){"Error with decoding audio data" + e.error})
+  source.start(0);
+})
+
+// const playFront = () => {
+//   source.start(0);
+// }
+
+socket.on('stop', (data) => {
+  source.stop(0);
+})
+
 

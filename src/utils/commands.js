@@ -1,6 +1,12 @@
 const {generateMessage} = require('./messages')
+const fs = require('fs')
+var path = require('path');
 
-module.exports = function (commandText,io,room){    
+const resp = {
+    status : null, message : null
+}
+
+module.exports = async function (commandText,io,room){    
     const argstext = commandText.trim()
     const args = argstext.split(" ", 2)
     const command = args[0]
@@ -8,46 +14,83 @@ module.exports = function (commandText,io,room){
     let resp;
     switch (command) {
         case 'play' : 
-                    if(input) resp = play(input);
-                    else resp = errorMessage();
+                    if(input) await play(input,io,room);
+                    else errorMessage();
                     break;
         case 'pause' : 
-                    if(input) resp = errorMessage();
-                    else resp = pause();
-                    break;            
+                    if(input) errorMessage();
+                    else pause(io,room);
+                    break;  
+        case 'stop' : 
+                    if(input) errorMessage();
+                    else stop(io,room);
+                    break;              
+
+        default: errorMessage();    
     }
+}
+
+const errorMessage = (message = "Incorrect Syntax") => {
+    resp.status = 0
+    resp.message = message
+}
+
+const play = async (input,io,room) => {    
+    const filename = 'Ambre.mp3'
+    var filepath = path.join(__dirname, filename);
+    const stat = fs.statSync(filepath)
+    console.log(stat)
+    const clients = io.sockets.adapter.rooms[room].sockets    
+    resp.status = 1
+    resp.message = "Playing Song...."  
     io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
     
-    let data = "This will soon be an Mp3 Stream"
-    //to send the stream here
-    io.to(room).emit('execute',data)
+    //to send a file
+    fs.readFile(filepath, function(err, buf){
+        for (const clientId in clients){
+            const socket = io.sockets.connected[clientId]
+            socket.emit('play', { audio: true, buffer: buf })
+        }       
+    })
     
-
-
+    // const readStream = fs.createReadStream(filepath)
+    // readStream.on('data', (chunk)=>{
+    //     for (const clientId in clients){
+    //         const socket = io.sockets.connected[clientId]
+    //         socket.emit('playData', chunk)
+    //     }
+    // })
+    // readStream.on('end', ()=>{
+    //     for (const clientId in clients){
+    //         const socket = io.sockets.connected[clientId]
+    //         socket.emit('playEnd', "Stream Ends")
+    //     }
+    // })
+    // readStream.on('error', (err) => {
+    //     socket.emit('playError', "An Error Has Occurred While Reading the Stream")
+    //     console.error(err);
+    // })
 }
 
-const errorMessage = (data = "Incorrect Syntax") => {
-    return {
-        filename,
-        status : 0,
-        message : data
-    }
-}
-
-const play = (input) => {    
-    const filename = __dirname + '/sampleMp3/' + 'River Phoenix - 1. River Phoenix - Week No.41.mp3'
-    return {
-        filename,
-        status : 1,
-        message : "Playing Song...."
-    }
+const pause = (io,room) => {
+    const clients = io.sockets.adapter.rooms[room].sockets    
+    resp.status = 1
+    resp.message = "Pausing Song...."
+    io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+    for (const clientId in clients){
+        const socket = io.sockets.connected[clientId]
+        socket.emit('pause', "pause the song")
+    }          
 
 }
+const stop = (io,room) => {
+    const clients = io.sockets.adapter.rooms[room].sockets    
+    resp.status = 1
+    resp.message = "Stopping Song...."
+    io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+    for (const clientId in clients){
+        const socket = io.sockets.connected[clientId]
+        socket.emit('stop', "stop the song")
+    }          
 
-const pause = () => {
-    return {
-        filename,
-        status : 1,
-        message : "Pausing Song...."
-    }
 }

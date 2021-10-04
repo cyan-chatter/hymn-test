@@ -2,13 +2,14 @@ const path = require('path')
 const http = require('http')
 const express = require('express')
 const socketio = require('socket.io')
+const ss = require('socket.io-stream')
 const app = express()
 const cors = require("cors")
 const server = http.createServer(app)
-const io = socketio(server)
 const Filter = require('bad-words')
 const { v4: uuidV4 } = require('uuid')
 const bodyParser = require("body-parser")
+const {pipeline} = require('stream')
 app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -16,6 +17,12 @@ app.set('view engine', 'ejs')
 const publicDirectoryPath = path.join(__dirname, '../public')
 app.use(express.static(publicDirectoryPath))
 const port = process.env.PORT || 3000
+const io = socketio.listen(server, {
+    log: false,
+    agent: false,
+    origins: '*:*',
+    transports: ['websocket', 'htmlfile', 'xhr-polling', 'jsonp-polling', 'polling']
+})
 
 const {generateMessage, generateLocation} = require('./utils/messages')
 const {addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users')
@@ -105,6 +112,7 @@ app.get('/room/:roomid/:username', (req,res) => {
 
 io.on('connection', (socket)=>{
     console.log('New Web Socket Connection')
+    const stream = ss.createStream()
 
     socket.on('join', (options, callback)=>{
         const {error, user} = addUser({ id: socket.id, ...options})
@@ -163,10 +171,10 @@ io.on('connection', (socket)=>{
         callback()
     })
 
-    socket.on('send-command',(commandText, callback)=>{   
+    socket.on('send-command',async (commandText, callback)=>{   
         const user = getUser(socket.id)       
         io.to(user.room).emit('message',generateMessage(user.username, commandText)) 
-        commandJob(commandText,io,user.room)
+        await commandJob(commandText,io,user.room)
         callback('Command Delivered!')
     })
 })
