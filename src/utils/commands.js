@@ -1,3 +1,4 @@
+let webaudiostate = require('./webaudiostate')
 const {generateMessage} = require('./messages')
 const fs = require('fs')
 var path = require('path');
@@ -20,6 +21,10 @@ module.exports = async function (commandText,io,room){
         case 'pause' : 
                     if(input) errorMessage();
                     else pause(io,room);
+                    break;  
+        case 'resume' : 
+                    if(input) errorMessage();
+                    else resume(io,room);
                     break;  
         case 'stop' : 
                     if(input) errorMessage();
@@ -73,7 +78,13 @@ const play = async (input,io,room) => {
 }
 
 const pause = (io,room) => {
-    const clients = io.sockets.adapter.rooms[room].sockets    
+    const clients = io.sockets.adapter.rooms[room].sockets 
+    if(!(webaudiostate.isAudioLoaded && webaudiostate.isAudioPlaying)){
+        resp.status = 0
+        resp.message = "Not Playing.."    
+        io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+        return
+    }   
     resp.status = 1
     resp.message = "Pausing Song...."
     io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
@@ -81,12 +92,41 @@ const pause = (io,room) => {
         const socket = io.sockets.connected[clientId]
         socket.emit('pause', "pause the song")
     }          
-
 }
+
+const resume = (io,room) => {
+    const clients = io.sockets.adapter.rooms[room].sockets    
+    if(!webaudiostate.isAudioLoaded){
+        resp.status = 0
+        resp.message = "Nothing to Play.."    
+        io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+        return
+    }
+    if(webaudiostate.isAudioPlaying){
+        resp.status = 0
+        resp.message = "Already Playing.."    
+        io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+        return
+    }
+    resp.status = 1
+    resp.message = "Resuming Song...."
+    io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+    for (const clientId in clients){
+        const socket = io.sockets.connected[clientId]
+        socket.emit('resume', "resume the song")
+    }          
+}
+
 const stop = (io,room) => {
     const clients = io.sockets.adapter.rooms[room].sockets    
+    if(!webaudiostate.isAudioLoaded){
+        resp.status = 0
+        resp.message = "No Music to Stop.."    
+        io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+        return
+    }
     resp.status = 1
-    resp.message = "Stopping Song...."
+    resp.message = "Stopping Music...."
     io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
     for (const clientId in clients){
         const socket = io.sockets.connected[clientId]

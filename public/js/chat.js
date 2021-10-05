@@ -258,25 +258,54 @@ if(window.webkitAudioContext) {
   audioCtx = new window.AudioContext();
 }
 
-//to send a file
+//receiving and decoding arrayBuffer to audioBuffer
 socket.on('play', (data)=>{
-  source = audioCtx.createBufferSource();
+  source = audioCtx.createBufferSource()
   audioCtx.decodeAudioData(data.buffer, function(buffer) {
-    myBuffer = buffer;
-    songLength = buffer.duration;
-    source.buffer = myBuffer;
-    source.connect(audioCtx.destination);
-    source.loop = false;
+    myBuffer = buffer
+    songLength = buffer.duration
+    source.buffer = myBuffer
+    source.connect(audioCtx.destination)
+    source.loop = false
   }, function(e){"Error with decoding audio data" + e.error})
-  source.start(0);
+  source.start(0)
+  const webaudiostate = {
+    isAudioLoaded : true,
+    isAudioPlaying : true
+  }
+  socket.emit('webaudiostate', webaudiostate)
 })
 
-// const playFront = () => {
-//   source.start(0);
-// }
+
+socket.on('pause', (data)=>{
+  if(audioCtx.state === 'running') {
+    audioCtx.suspend()
+  }
+  const webaudiostate = {
+    isAudioLoaded : true,
+    isAudioPlaying : false
+  }
+  socket.emit('webaudiostate', webaudiostate)
+})
+
+socket.on('resume', (data)=>{
+  if(audioCtx.state === 'suspended') {
+    audioCtx.resume()  
+  }
+  const webaudiostate = {
+    isAudioLoaded : true,
+    isAudioPlaying : true
+  }
+  socket.emit('webaudiostate', webaudiostate)
+})
 
 socket.on('stop', (data) => {
   source.stop(0);
+  const webaudiostate = {
+    isAudioLoaded : true,
+    isAudioPlaying : false
+  }
+  socket.emit('webaudiostate', webaudiostate)
 })
 
 

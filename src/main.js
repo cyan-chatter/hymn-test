@@ -30,6 +30,8 @@ const {addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users')
 const commandJob = require('./utils/commands')
 const Player = require('./utils/Player')
 
+let webaudiostate = require('./utils/webaudiostate')
+
 const invrooms = []
 
 const generalroomid = 'general'
@@ -177,8 +179,12 @@ io.on('connection', (socket)=>{
         await commandJob(commandText,io,user.room)
         callback('Command Delivered!')
     })
+    
+    socket.on('webaudiostate', ({isAudioLoaded,isAudioPlaying}) => {
+        webaudiostate.isAudioLoaded = isAudioLoaded
+        webaudiostate.isAudioPlaying = isAudioPlaying
+    })
 })
-
 
 server.listen(port,()=>{
     console.log('Server is up at Port: ', port);
