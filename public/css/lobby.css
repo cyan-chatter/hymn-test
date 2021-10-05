@@ -10,7 +10,7 @@ body{
     margin : 5px 5px 20px 0px; 
     padding : 5px;
     border-radius: 5px;
-    background-color :mediumpurple;
+    background-color :#03aa86;
     color: aliceblue;
 }
 
@@ -19,14 +19,15 @@ body{
     padding : 10px;
     border-radius: 1rem;
     border: 2px solid black;
-    transition: border 1s;
+    transition: border 2s;
+    transition: background 2s;
     transition: color 1s;
 }
 
 .room-option:hover{
     cursor:pointer;
-    border: 4px solid mediumpurple;
-    background-color:mediumpurple;
+    border: 4px solid #03aa86;
+    background-color:#03aa86;
     color: aliceblue;
 }
 

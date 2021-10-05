@@ -149,9 +149,10 @@ io.on('connection', (socket)=>{
         callback('Message Delivered!')
     })
 
-    socket.on('disconnect',()=>{
+    socket.on('disconnect',async ()=>{
         const user = removeUser(socket.id)
         if(user){
+            
             socket.to(user.room).broadcast.emit('user-disconnected', user.peerId)
             io.to(user.room).emit('message', generateMessage('', `${user.username} has left the chat`))
             io.to(user.room).emit('roomData', {
