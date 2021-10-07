@@ -1,34 +1,38 @@
-let webaudiostate = require('./webaudiostate')
 const {generateMessage} = require('./messages')
 const fs = require('fs')
 var path = require('path');
+const fsPromises = require('fs').promises
+
+const getFileData = async fn => {
+    data = await fsPromises.readFile(fn)
+    return data
+}
 
 const resp = {
     status : null, message : null
 }
 
-module.exports = async function (commandText,io,room){    
+module.exports = async function (commandText,io,room,player){    
     const argstext = commandText.trim()
     const args = argstext.split(" ", 2)
     const command = args[0]
     const input = args[1]
-    let resp;
     switch (command) {
         case 'play' : 
-                    if(input) await play(input,io,room);
+                    if(input) await play(input,io,room,player);
                     else errorMessage();
                     break;
         case 'pause' : 
                     if(input) errorMessage();
-                    else pause(io,room);
+                    else pause(io,room,player.webaudiostate);
                     break;  
         case 'resume' : 
                     if(input) errorMessage();
-                    else resume(io,room);
+                    else resume(io,room,player.webaudiostate);
                     break;  
         case 'stop' : 
                     if(input) errorMessage();
-                    else stop(io,room);
+                    else stop(io,room,player.webaudiostate);
                     break;              
 
         default: errorMessage();    
@@ -40,16 +44,17 @@ const errorMessage = (message = "Incorrect Syntax") => {
     resp.message = message
 }
 
-const play = async (input,io,room) => {    
+const play = async (input,io,room,player) => {    
     const filename = 'Ambre.mp3'
     var filepath = path.join(__dirname, filename);
     const stat = fs.statSync(filepath)
     console.log(stat)
     const clients = io.sockets.adapter.rooms[room].sockets    
+    player.queue.enqueue()
+    io.to(room).emit('message',generateMessage('Hymn', 'Added to Queue'))
     resp.status = 1
     resp.message = "Playing Song...."  
     io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
-    
     //to send a file
     fs.readFile(filepath, function(err, buf){
         for (const clientId in clients){
@@ -77,7 +82,7 @@ const play = async (input,io,room) => {
     // })
 }
 
-const pause = (io,room) => {
+const pause = (io,room,webaudiostate) => {
     const clients = io.sockets.adapter.rooms[room].sockets 
     if(!(webaudiostate.isAudioLoaded && webaudiostate.isAudioPlaying)){
         resp.status = 0
@@ -94,7 +99,7 @@ const pause = (io,room) => {
     }          
 }
 
-const resume = (io,room) => {
+const resume = (io,room,webaudiostate) => {
     const clients = io.sockets.adapter.rooms[room].sockets    
     if(!webaudiostate.isAudioLoaded){
         resp.status = 0
@@ -117,7 +122,7 @@ const resume = (io,room) => {
     }          
 }
 
-const stop = (io,room) => {
+const stop = (io,room,webaudiostate) => {
     const clients = io.sockets.adapter.rooms[room].sockets    
     if(!webaudiostate.isAudioLoaded){
         resp.status = 0
@@ -132,5 +137,4 @@ const stop = (io,room) => {
         const socket = io.sockets.connected[clientId]
         socket.emit('stop', "stop the song")
     }          
-
 }

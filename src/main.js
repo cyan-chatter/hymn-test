@@ -9,7 +9,12 @@ const server = http.createServer(app)
 const Filter = require('bad-words')
 const { v4: uuidV4 } = require('uuid')
 const bodyParser = require("body-parser")
-const {pipeline} = require('stream')
+require("dotenv").config()
+
+const SpotifyWebApi = require("spotify-web-api-node")
+const lyricsFinder = require("lyrics-finder")
+
+
 app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -25,12 +30,10 @@ const io = socketio.listen(server, {
 })
 
 const {generateMessage, generateLocation} = require('./utils/messages')
-const {addUser, removeUser, getUser, getUsersInRoom} = require('./utils/users')
+const {addUser, removeUser, getUser, getUsersInRoom, setAudioState} = require('./utils/users')
 
-const commandJob = require('./utils/commands')
+const executeCommand = require('./utils/commands')
 const Player = require('./utils/Player')
-
-let webaudiostate = require('./utils/webaudiostate')
 
 const invrooms = []
 
@@ -38,10 +41,10 @@ const generalroomid = 'general'
 const soloroomid = uuidV4()
 
 const generalroom = {
-    roomname : 'general', roomid: 'general', roomtype : 'myroom-default', actives : 0, player : new Player(generalroomid, 'general')
+    roomname : 'general', roomid: 'general', roomtype : 'myroom-default', actives : 0, player : new Player(generalroomid)
 }
 const soloroom = {
-    roomname : 'solo', roomid: soloroomid, roomtype : 'myroom-default', actives : 0, player : new Player('solo', soloroomid)
+    roomname : 'solo', roomid: soloroomid, roomtype : 'myroom-default', actives : 0, player : new Player(soloroomid)
 }
 
 const myroomsmap = new Map()
@@ -112,10 +115,61 @@ app.get('/room/:roomid/:username', (req,res) => {
 })
 
 
+
+app.post("/refresh", (req, res) => {
+    const refreshToken = req.body.refreshToken
+    const spotifyApi = new SpotifyWebApi({
+      redirectUri: process.env.REDIRECT_URI,
+      clientId: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      refreshToken,
+    })
+  
+    spotifyApi
+      .refreshAccessToken()
+      .then(data => {
+        res.json({
+          accessToken: data.body.accessToken,
+          expiresIn: data.body.expiresIn,
+        })
+      })
+      .catch(err => {
+        console.log(err)
+        res.sendStatus(400)
+      })
+})
+
+app.post("/login", (req, res) => {
+    const code = req.body.code
+    const spotifyApi = new SpotifyWebApi({
+      redirectUri: process.env.REDIRECT_URI,
+      clientId: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+    })
+  
+    spotifyApi
+      .authorizationCodeGrant(code)
+      .then(data => {
+        res.json({
+          accessToken: data.body.access_token,
+          refreshToken: data.body.refresh_token,
+          expiresIn: data.body.expires_in,
+        })
+      })
+      .catch(err => {
+        res.sendStatus(400)
+      })
+  })
+  
+  app.get("/lyrics", async (req, res) => {
+    const lyrics =
+      (await lyricsFinder(req.query.artist, req.query.track)) || "No Lyrics Found"
+    res.json({ lyrics })
+  })
+
+
 io.on('connection', (socket)=>{
     console.log('New Web Socket Connection')
-    const stream = ss.createStream()
-
     socket.on('join', (options, callback)=>{
         const {error, user} = addUser({ id: socket.id, ...options})
         if(error){
@@ -152,7 +206,6 @@ io.on('connection', (socket)=>{
     socket.on('disconnect',async ()=>{
         const user = removeUser(socket.id)
         if(user){
-            
             socket.to(user.room).broadcast.emit('user-disconnected', user.peerId)
             io.to(user.room).emit('message', generateMessage('', `${user.username} has left the chat`))
             io.to(user.room).emit('roomData', {
@@ -175,15 +228,22 @@ io.on('connection', (socket)=>{
     })
 
     socket.on('send-command',async (commandText, callback)=>{   
-        const user = getUser(socket.id)       
-        io.to(user.room).emit('message',generateMessage(user.username, commandText)) 
-        await commandJob(commandText,io,user.room)
+        const user = getUser(socket.id)
+        const roomid = user.room
+        const room = myroomsmap.get(roomid)
+        io.to(roomid).emit('message',generateMessage(user.username, commandText)) 
+        await executeCommand(commandText,io,roomid,room.player)
         callback('Command Delivered!')
     })
     
-    socket.on('webaudiostate', ({isAudioLoaded,isAudioPlaying}) => {
-        webaudiostate.isAudioLoaded = isAudioLoaded
-        webaudiostate.isAudioPlaying = isAudioPlaying
+    socket.on('webaudiostate', (webaudiostate) => {
+        const user = setAudioState(socket.id, webaudiostate.user.isAudioLoaded, webaudiostate.user.isAudioPlaying) //for user
+        const room = myroomsmap.get(user.room)
+        room.player.webaudiostate = {
+            isAudioLoaded : webaudiostate.room.isAudioLoaded,
+            isAudioPlaying : webaudiostate.room.isAudioPlaying
+        }
+        myroomsmap.set(user.room, room)
     })
 })
 

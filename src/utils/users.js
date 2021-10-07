@@ -26,9 +26,12 @@ const addUser = ({id, username, room, peerId}) =>{
         }
     }
 
-
     //store user
-    const user = {id, username, room, peerId}
+    
+    const user = {id, username, room, peerId, webaudiostate : {
+        isAudioLoaded : false,
+        isAudioPlaying : false
+    }}
     users.push(user)
     return { user }
 } 
@@ -38,23 +41,12 @@ const removeUser = (id)=>{
         return user.id === id
     })
 
+    
+
     if(index !== -1){
         return users.splice(index,1)[0]
     }
 }
-
-const res1 = addUser({
-    id: 23,
-    username: 'Sayan',
-    room: 'deonaro'
-})
-
-const res2 = addUser({
-    id: 21,
-    username: 'Leo',
-    room: 'deonaro'
-})
-
 
 const getUser = (id)=>{
     const user = users.find((u)=>{
@@ -69,12 +61,21 @@ const getUsersInRoom = (room)=>{
         return u.room === room
     })
     return user
+}
 
+const setAudioState = (id, isAudioLoaded, isAudioPlaying) => {
+    const user = users.find((u)=>{
+        return u.id === id
+    })
+    user.webaudiostate.isAudioLoaded = isAudioLoaded
+    user.webaudiostate.isAudioPlaying = isAudioPlaying
+    return user
 }
 
 module.exports = {
     addUser, 
     removeUser, 
     getUser, 
-    getUsersInRoom   
+    getUsersInRoom,
+    setAudioState
 }

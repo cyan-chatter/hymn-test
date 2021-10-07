@@ -270,8 +270,14 @@ socket.on('play', (data)=>{
   }, function(e){"Error with decoding audio data" + e.error})
   source.start(0)
   const webaudiostate = {
-    isAudioLoaded : true,
-    isAudioPlaying : true
+    user: {
+      isAudioLoaded : true,
+      isAudioPlaying : true
+    },
+    room : {
+      isAudioLoaded : true,
+      isAudioPlaying : true
+    }
   }
   socket.emit('webaudiostate', webaudiostate)
 })
@@ -282,8 +288,14 @@ socket.on('pause', (data)=>{
     audioCtx.suspend()
   }
   const webaudiostate = {
-    isAudioLoaded : true,
-    isAudioPlaying : false
+    user: {
+      isAudioLoaded : true,
+      isAudioPlaying : false
+    },
+    room: {
+      isAudioLoaded : true,
+      isAudioPlaying : false
+    }
   }
   socket.emit('webaudiostate', webaudiostate)
 })
@@ -293,8 +305,14 @@ socket.on('resume', (data)=>{
     audioCtx.resume()  
   }
   const webaudiostate = {
-    isAudioLoaded : true,
-    isAudioPlaying : true
+    user: {
+      isAudioLoaded : true,
+      isAudioPlaying : true
+    },
+    room : {
+      isAudioLoaded : true,
+      isAudioPlaying : true
+    }
   }
   socket.emit('webaudiostate', webaudiostate)
 })
@@ -302,8 +320,14 @@ socket.on('resume', (data)=>{
 socket.on('stop', (data) => {
   source.stop(0);
   const webaudiostate = {
-    isAudioLoaded : true,
-    isAudioPlaying : false
+    user: {
+      isAudioLoaded : true,
+      isAudioPlaying : false
+    },
+    room: {
+      isAudioLoaded : true,
+      isAudioPlaying : false
+    }
   }
   socket.emit('webaudiostate', webaudiostate)
 })
