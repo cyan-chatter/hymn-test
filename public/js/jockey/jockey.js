@@ -1,5 +1,5 @@
 const SpotifyWebApi = require('spotify-web-api-node')
-
+function Queue(){var a=[],b=0;this.getLength=function(){return a.length-b};this.isEmpty=function(){return 0==a.length};this.enqueue=function(b){a.push(b)};this.dequeue=function(){if(0!=a.length){var c=a[b];2*++b>=a.length&&(a=a.slice(b),b=0);return c}};this.peek=function(){return 0<a.length?a[b]:void 0}};
 // Store
 // localStorage.setItem("lastname", "Smith");
 // // Retrieve
@@ -10,6 +10,8 @@ function jockey(){
   const spotifyApi = new SpotifyWebApi({
     clientId: "8b945ef10ea24755b83ac50cede405a0"
   })
+
+  const queue = new Queue();
   
   let sse = new EventSource("http://localhost:3000/sse");
   
@@ -65,12 +67,29 @@ function jockey(){
 
       console.log(spotifyApi)
 
-      
+      socket.on('play', (search) => {
+        let song = null;
+        spotifyApi.searchTracks(search).then(res => {
+          if(res.body.tracks.items.length > 0){
+            const track = res.body.tracks.items[0]
+              song = {
+                artist: track.artists[0].name,
+                title: track.name,
+                uri: track.uri
+              }
+              queue.enqueue(song)
+          }
+          console.log(queue.peek())
+          
+        })
+
+        
 
 
-      
+    
 
-
+        
+      })
     })
     
     socket.on('user-disconnected', userId => {
@@ -102,7 +121,7 @@ function jockey(){
     //   audioGrid.append(audio)
     // }  
     
-    socket.on('message', (message) => console.log("socket io works"))
+    //socket.on('message', (message) => console.log("socket io works"))
     
     socket.on('room-data', ({room , users})=>{
         console.log("room-data", room, users)

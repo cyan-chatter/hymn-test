@@ -25,10 +25,11 @@ const getClients = (io,room,socketId) => {
 
 module.exports = async function (commandText,io,room,player,socketId,ss){    
     const argstext = commandText.trim()
-    const args = argstext.split(" ", 2)
-    const command = args[0]
-    const input = args[1]
+    const input = argstext.split(" ").slice(1).join(" ")
+    const command = argstext.split(" ", 2)[0]
     const clients = getClients(io,room,socketId)
+    console.log(command)
+    console.log(input)
     /*
     input : input argument
     io : socket io
@@ -181,10 +182,10 @@ const stop = (io,room,webaudiostate) => {
     }          
 }
 
+
 const playPeer = (input,io,room,clients,socketId) => {
     console.log("playPeer")
-    
-
+    io.to(socketId).emit("play", input);
 }
 
 const pausePeer = () => {
