@@ -312,8 +312,11 @@ io.on('connection', (socket)=>{
         const room = myroomsmap.get(roomid)
         io.to(roomid).emit('message',generateMessage(user.username, commandText)) 
         const jockey = jockeys.find(el=>el.roomId === roomid)
-        await executeCommand(commandText,io,roomid,room.player,jockey,ss)
-        callback('Command Delivered!')
+        if(!jockey) callback('Jockey Not Connected!')
+        else{
+            await executeCommand(commandText,io,roomid,room.player,jockey.socketId,ss)
+            callback('Command Delivered!')
+        }
     })
     
     socket.on('webaudiostate', (webaudiostate) => {

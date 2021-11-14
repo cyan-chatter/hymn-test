@@ -12,16 +12,37 @@ const resp = {
     status : null, message : null
 }
 
-module.exports = async function (commandText,io,room,player,jockey,ss){    
+const getClients = (io,room,socketId) => {
+    const clientList = []
+    let clients = io.sockets.adapter.rooms[room].sockets    
+    for (const clientId in clients){
+        if(clientId !== socketId){
+           clientList.push(clientId)
+        }
+    }
+    return clientList
+}
+
+module.exports = async function (commandText,io,room,player,socketId,ss){    
     const argstext = commandText.trim()
     const args = argstext.split(" ", 2)
     const command = args[0]
     const input = args[1]
-    const socketId = jockey.socketId
+    const clients = getClients(io,room,socketId)
+    /*
+    input : input argument
+    io : socket io
+    room : roomId 
+    player : room player object
+    socketId : Jockey socket id
+    ss : socket io stream
+    clients : array of connected clients (jokcey excluded)
+    */
+    
     switch (command) {
         case 'play' : 
                     if(input) //await play(input,io,room,player,ss);
-                    await playPeer(input,io,room,socketId);
+                    await playPeer(input,io,room,clients,socketId);
                     else errorMessage();
                     break;
         case 'pause' : 
@@ -160,23 +181,10 @@ const stop = (io,room,webaudiostate) => {
     }          
 }
 
-
-const getClients = (io,room,socketId) => {
-    const clientList = []
-    let clients = io.sockets.adapter.rooms[room].sockets    
-    for (const clientId in clients){
-        if(clientId !== socketId){
-           clientList.push(clientId)
-        }
-    }
-    return clientList
-}
-
-
-const playPeer = (input,io,room,socketId) => {
-    const clients = getClients(io,room,socketId)
-    console.log(clients)
+const playPeer = (input,io,room,clients,socketId) => {
     console.log("playPeer")
+    
+
 }
 
 const pausePeer = () => {
