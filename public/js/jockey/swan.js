@@ -27,7 +27,7 @@ function jockey(){
   }
 
   accessToken = localStorage.getItem("accessToken")
-  if(accessToken !== undefined || accessToken !== null){
+  if(accessToken !== undefined && accessToken !== null){
     spotifyApi.setAccessToken(accessToken)
     isexe = true
     execute()
