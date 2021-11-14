@@ -234,6 +234,7 @@ app.post("/login", (req, res) => {
     res.json({ lyrics })
   })
 
+  const jockeys = [] // [ {socketId, roomId} ]
 
 io.on('connection', (socket)=>{
     console.log('New Web Socket Connection')
@@ -243,7 +244,7 @@ io.on('connection', (socket)=>{
             return callback(error)
         }
         socket.join(user.room)
-        socket.to(user.room).broadcast.emit('user-connected', user.peerId)
+        socket.to(user.room).broadcast.emit('user-connected', user.peerId, socket.id)
         socket.emit('message', generateMessage('', 'Welcome!'))
         socket.broadcast.to(user.room).emit('message', generateMessage('', `${user.username} has joined the chat`))    
         let room = myroomsmap.get(user.room)
@@ -254,6 +255,11 @@ io.on('connection', (socket)=>{
         io.to(user.room).emit('roomData', {
             room: options.roomname,
             users: getUsersInRoom(user.room)
+        })
+        socket.emit('client-id', socket.id)
+        socket.on('hymn-client-details', ({socketId,roomId})=>{
+            console.log(socketId, roomId)
+            jockeys.push({socketId, roomId})
         })
         
         callback()
@@ -284,6 +290,12 @@ io.on('connection', (socket)=>{
                 ...room,
                 actives : --room.actives
             })
+            socket.on('hymn-client-details-disconnect', (socketId) =>{
+                const filterJockey = (el) => {
+                    return el.socketId !== socketId
+                }
+                jockeys.filter(filterJockey)
+            })
         }
     })
     
@@ -299,7 +311,8 @@ io.on('connection', (socket)=>{
         const roomid = user.room
         const room = myroomsmap.get(roomid)
         io.to(roomid).emit('message',generateMessage(user.username, commandText)) 
-        await executeCommand(commandText,io,roomid,room.player,ss)
+        const jockey = jockeys.find(el=>el.roomId === roomid)
+        await executeCommand(commandText,io,roomid,room.player,jockey,ss)
         callback('Command Delivered!')
     })
     

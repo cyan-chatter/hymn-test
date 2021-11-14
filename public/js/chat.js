@@ -307,6 +307,10 @@ const playAudio = async (bufferdata) => {
 // });
 
 
+socket.on('client-id', (id)=>{
+  console.log('socket-id: ' + id)
+})
+
 //receiving and decoding arrayBuffer to audioBuffer
 socket.on('play', (data)=>{
   playAudio(data.buffer)

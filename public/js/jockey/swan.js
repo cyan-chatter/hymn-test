@@ -7,7 +7,7 @@ const SpotifyWebApi = require('spotify-web-api-node')
 // document.getElementById("result").innerHTML = localStorage.getItem("lastname"); 
 function jockey(){
 
-  let auth, accessToken, isexe = false;
+  let auth, accessToken, isexe = false, socketId;
   const spotifyApi = new SpotifyWebApi({
     clientId: "8b945ef10ea24755b83ac50cede405a0"
   })
@@ -76,6 +76,7 @@ function jockey(){
     
     socket.on('user-disconnected', userId => {
       if (peers[userId]) peers[userId].close()
+      socket.emit('hymn-client-details-disconnect', socketId)
     })
     
     myPeer.on('open', peerId => {
@@ -107,6 +108,13 @@ function jockey(){
     socket.on('room-data', ({room , users})=>{
         console.log("room-data", room, users)
     })
+
+    socket.on('client-id', (id)=>{
+      console.log('socket-id: ' + id)
+      socketId = id
+      socket.emit('hymn-client-details', {socketId : id, roomId : ROOM_ID})
+    })
+    
   }
  
 }

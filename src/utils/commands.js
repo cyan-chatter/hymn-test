@@ -12,27 +12,32 @@ const resp = {
     status : null, message : null
 }
 
-module.exports = async function (commandText,io,room,player,ss){    
+module.exports = async function (commandText,io,room,player,jockey,ss){    
     const argstext = commandText.trim()
     const args = argstext.split(" ", 2)
     const command = args[0]
     const input = args[1]
+    const socketId = jockey.socketId
     switch (command) {
         case 'play' : 
-                    if(input) await play(input,io,room,player,ss);
+                    if(input) //await play(input,io,room,player,ss);
+                    await playPeer(input,io,room,socketId);
                     else errorMessage();
                     break;
         case 'pause' : 
                     if(input) errorMessage();
-                    else pause(io,room,player.webaudiostate);
+                    else //pause(io,room,player.webaudiostate);
+                    await pausePeer();
                     break;  
         case 'resume' : 
                     if(input) errorMessage();
-                    else resume(io,room,player.webaudiostate);
+                    else //resume(io,room,player.webaudiostate);
+                    await resumePeer();
                     break;  
         case 'stop' : 
                     if(input) errorMessage();
-                    else stop(io,room,player.webaudiostate);
+                    else //stop(io,room,player.webaudiostate);
+                    await stopPeer();
                     break;              
 
         default: errorMessage();    
@@ -153,4 +158,39 @@ const stop = (io,room,webaudiostate) => {
         const socket = io.sockets.connected[clientId]
         socket.emit('stop', "stop the song")
     }          
+}
+
+
+const getClients = (io,room,socketId) => {
+    const clientList = []
+    let clients = io.sockets.adapter.rooms[room].sockets    
+    for (const clientId in clients){
+        if(clientId !== socketId){
+           clientList.push(clientId)
+        }
+    }
+    return clientList
+}
+
+
+const playPeer = (input,io,room,socketId) => {
+    const clients = getClients(io,room,socketId)
+    console.log(clients)
+    console.log("playPeer")
+}
+
+const pausePeer = () => {
+    console.log("pausePeer")
+}
+
+const resumePeer = () => {
+    console.log("resumePeer")
+}
+
+const searchPeer = () => {
+    console.log("searchPeer")
+}
+
+const stopPeer = () => {
+    console.log("stopPeer")
 }
