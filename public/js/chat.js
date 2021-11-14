@@ -1,7 +1,7 @@
 //const messages = require("../../src/utils/messages")
 //import ss from 'socket.io-stream';
 const socket = io()
-
+function Queue(){var a=[],b=0;this.getLength=function(){return a.length-b};this.isEmpty=function(){return 0==a.length};this.enqueue=function(b){a.push(b)};this.dequeue=function(){if(0!=a.length){var c=a[b];2*++b>=a.length&&(a=a.slice(b),b=0);return c}};this.peek=function(){return 0<a.length?a[b]:void 0}};
 //Elements
 const $messageForm = document.querySelector('#message-form')
 const $messageFormInput = $messageForm.querySelector('input')
@@ -16,6 +16,7 @@ const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 // const {username, room} = Qs.parse(location.search, { ignoreQueryPrefix:true})
 
 const audioGrid = document.getElementById('audio-grid')
+const musicGrid = document.getElementById('music-grid')
 const micbtn = document.getElementById('toggle-mic-btn')
 const $commandForm = document.querySelector('#command-form')
 const $commandFormInput = $commandForm.querySelector('input')
@@ -50,7 +51,6 @@ navigator.mediaDevices.getUserMedia({
   })
   addaudioStream(myaudio, stream)
 
-
   micbtn.addEventListener('click', ()=>{  
     micmuted  = !micmuted
     if(micmuted){
@@ -82,7 +82,8 @@ navigator.mediaDevices.getUserMedia({
 
   socket.on('user-connected', userId => {
       console.log("new user connects", userId)
-    connectToNewUser(userId, stream)
+      setTimeout(()=>connectToNewUser(userId, stream), 1000)
+      
   })
 })
 
@@ -116,13 +117,22 @@ function connectToNewUser(userId, stream) {
 }
 
 function addaudioStream(audio, stream) {
-    console.log("audio added")
+  console.log("audio added")
   audio.srcObject = stream
   audio.addEventListener('loadedmetadata', () => {
     audio.play()
   })
   audioGrid.append(audio)
 }  
+
+function addmusicStream(audio, stream) {
+  console.log("music added")
+  audio.srcObject = stream
+  audio.addEventListener('loadedmetadata', () => {
+    audio.play()
+  })
+  musicGrid.append(audio)
+}
 
 
 
@@ -238,8 +248,39 @@ $commandForm.addEventListener('submit', (e)=>{
 })
 
 
+let audioCtx;
+let source;
+let songLength;
+
+// class playAudioBuffer{
+//   constructor(){
+//     this.initplay = false;
+//     this.queue = new Queue();
+//   }
+// }
+if(window.webkitAudioContext) {
+  audioCtx = new window.webkitAudioContext();
+} else {
+  audioCtx = new window.AudioContext();
+}
+
+const playAudio = async (bufferdata) => {
+  source = audioCtx.createBufferSource()
+  audioCtx.decodeAudioData(bufferdata, function(buffer) {
+    myBuffer = buffer
+    songLength = buffer.duration
+    source.buffer = myBuffer
+    source.connect(audioCtx.destination)
+    source.loop = false
+  }, function(e){"Error with decoding audio data" + e.error})
+  source.start(0)
+}
+
+// const playAudioBuffer = new Queue();
 // socket.on('playData', async function (chunk) {
-//   console.log("playdata executes",chunk)
+//   playAudioBuffer.enqueue(chunk)
+//   await playAudio(playAudioBuffer.peek())
+//   playAudioBuffer.dequeue()
 // })
 // socket.on('playEnd', async function (m) {
 //   console.log("playend executes",m)
@@ -248,27 +289,27 @@ $commandForm.addEventListener('submit', (e)=>{
 //   console.log(chunk)
 // })
 
-let audioCtx;
-let source;
-let songLength;
+// var stream = ss.createStream()
+// ss(socket).emit('file', stream)
+// stream.pipe(fs.createWriteStream('file.txt'))
 
-if(window.webkitAudioContext) {
-  audioCtx = new window.webkitAudioContext();
-} else {
-  audioCtx = new window.AudioContext();
-}
+// ss(socket).on('playStream', function(stream) {
+//   const music = newEl('audio')
+//   console.log("stream connected")
+//   stream.on('data', function(data) {
+//     console.log("stream data received")
+//     addaudioStream(music, data)
+//   });
+
+//   stream.on('end', function(data) {
+//     console.log("stream data ends")  
+//   });
+// });
+
 
 //receiving and decoding arrayBuffer to audioBuffer
 socket.on('play', (data)=>{
-  source = audioCtx.createBufferSource()
-  audioCtx.decodeAudioData(data.buffer, function(buffer) {
-    myBuffer = buffer
-    songLength = buffer.duration
-    source.buffer = myBuffer
-    source.connect(audioCtx.destination)
-    source.loop = false
-  }, function(e){"Error with decoding audio data" + e.error})
-  source.start(0)
+  playAudio(data.buffer)
   const webaudiostate = {
     user: {
       isAudioLoaded : true,

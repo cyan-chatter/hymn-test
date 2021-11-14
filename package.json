@@ -26,6 +26,7 @@
     "uuid": "^8.1.0"
   },
   "devDependencies": {
+    "browserify": "^17.0.0",
     "nodemon": "^2.0.13"
   }
 }

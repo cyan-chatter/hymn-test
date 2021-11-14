@@ -12,14 +12,14 @@ const resp = {
     status : null, message : null
 }
 
-module.exports = async function (commandText,io,room,player){    
+module.exports = async function (commandText,io,room,player,ss){    
     const argstext = commandText.trim()
     const args = argstext.split(" ", 2)
     const command = args[0]
     const input = args[1]
     switch (command) {
         case 'play' : 
-                    if(input) await play(input,io,room,player);
+                    if(input) await play(input,io,room,player,ss);
                     else errorMessage();
                     break;
         case 'pause' : 
@@ -44,7 +44,8 @@ const errorMessage = (message = "Incorrect Syntax") => {
     resp.message = message
 }
 
-const play = async (input,io,room,player) => {    
+const play = async (input,io,room,player,ss) => {    
+    
     const filename = 'Ambre.mp3'
     var filepath = path.join(__dirname, filename);
     const stat = fs.statSync(filepath)
@@ -55,6 +56,7 @@ const play = async (input,io,room,player) => {
     resp.status = 1
     resp.message = "Playing Song...."  
     io.to(room).emit('message',generateMessage('Hymn', resp.message)) 
+    
     //to send a file
     fs.readFile(filepath, function(err, buf){
         for (const clientId in clients){
@@ -64,6 +66,20 @@ const play = async (input,io,room,player) => {
     })
     
     // const readStream = fs.createReadStream(filepath)
+    // readStream.on('open', function () {
+    //     for (const clientId in clients){
+    //         const socket = io.sockets.connected[clientId]
+    //         ss(socket).emit('playStream', readStream)
+    //     }
+    // }) 
+    // readStream.on('error', function(err) {
+    //     console.log(err)
+    // })
+
+    // ss(socket).on('file', function(stream) {
+    //     fs.createReadStream(filepath).pipe(stream)
+    // })
+
     // readStream.on('data', (chunk)=>{
     //     for (const clientId in clients){
     //         const socket = io.sockets.connected[clientId]

@@ -9,11 +9,12 @@ const server = http.createServer(app)
 const Filter = require('bad-words')
 const { v4: uuidV4 } = require('uuid')
 const bodyParser = require("body-parser")
-require("dotenv").config()
+require('dotenv').config({ path: `${__dirname}/dev.env` })
 
 const SpotifyWebApi = require("spotify-web-api-node")
 const lyricsFinder = require("lyrics-finder")
 
+var browserify = require('browserify-middleware');
 
 app.use(cors())
 app.use(bodyParser.json())
@@ -79,15 +80,71 @@ app.post('/newmyroom', (req,res)=>{
 //     res.send(newroom)
 // })
 
+//console.log(__dirname)
+
+const jspath = path.join(publicDirectoryPath, './js/jockey')
+const cp = path.join(jspath, 'jockey.js')
+
+// app.use('./js/jockey/swan.js', browserify(cp))
+// app.get('../public/js/jockey/swan.js', browserify(['spotify-web-api-node']))
+
+
+function send (res,data) {
+    console.log(data);
+    res.write("data: {\n" + `data: "clientId": "${data.clientId}",\ndata: "accessToken": "${data.accessToken}",\ndata: "refreshToken": "${data.refreshToken}",\ndata: "expiresIn": "${data.expiresIn}"\n` + "data: }\n\n");
+}
+
+let sseres;
+
+app.get("/sse", (req,res) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    sseres = res;
+})
+
 app.post('/lobby', (req,res)=>{
     username = req.body.username
+    const code = req.body.code
     const vals = Array.from(myroomsmap.values())
-    console.log(vals)
-    res.render('lobby',{
-        username: req.body.username,
-        myrooms : vals, 
-        invrooms
+    console.log(process.env.REDIRECT_URI)
+    const spotifyApi = new SpotifyWebApi({
+      redirectUri: process.env.REDIRECT_URI,
+      clientId: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
     })
+  
+    spotifyApi
+      .authorizationCodeGrant(code)
+      .then(data => {
+        const auth = {
+            accessToken: data.body.access_token,
+            refreshToken: data.body.refresh_token,
+            expiresIn: data.body.expires_in,
+            clientId: process.env.CLIENT_ID      
+        }
+        // res.json({
+        //   accessToken: data.body.access_token,
+        //   refreshToken: data.body.refresh_token,
+        //   expiresIn: data.body.expires_in,
+        // })
+        if(sseres === undefined || sseres === null) throw new Error('jockey is closed')
+        send(sseres,auth);
+        res.render('lobby',{
+            username: req.body.username,
+            myrooms : vals, 
+            invrooms,
+            auth,
+            err : '0'
+        })
+      })
+      .catch(err => {
+        res.render('lobby',{
+            username: req.body.username,
+            myrooms : vals, 
+            invrooms,
+            auth : err,
+            err : '1'
+        })
+      })
 })
 
 app.get('/lobby/:username', (req,res)=>{
@@ -101,11 +158,12 @@ app.get('/lobby/:username', (req,res)=>{
 
 
 app.get('/room/:roomid/:username', (req,res) => {
-    console.log(req.params)
-    console.log(myroomsmap.get(req.params.roomid))
+    console.log("roomid: ", req.params.roomid)
+    //console.log(myroomsmap.get(req.params.roomid))
     let room = myroomsmap.get(req.params.roomid).roomname
-    console.log(room)
+    //console.log(room)
     if(!room) return res.redirect('/')
+    //
     let userdata = {
         username : req.params.username,
         room,
@@ -114,6 +172,17 @@ app.get('/room/:roomid/:username', (req,res) => {
     res.render('chat', userdata)
 })
 
+app.get('/jockey', (req,res)=>{
+    const room = 'general'
+    let roomname = myroomsmap.get(room).roomname
+    res.render('jockey', {room, roomname})
+})
+
+app.get('/jockey/:roomid', (req,res)=>{
+    const room = req.params.roomid
+    let roomname = myroomsmap.get(room).roomname
+    res.render('jockey', {room, roomname})
+})
 
 
 app.post("/refresh", (req, res) => {
@@ -232,7 +301,7 @@ io.on('connection', (socket)=>{
         const roomid = user.room
         const room = myroomsmap.get(roomid)
         io.to(roomid).emit('message',generateMessage(user.username, commandText)) 
-        await executeCommand(commandText,io,roomid,room.player)
+        await executeCommand(commandText,io,roomid,room.player,ss)
         callback('Command Delivered!')
     })
     
@@ -245,6 +314,9 @@ io.on('connection', (socket)=>{
         }
         myroomsmap.set(user.room, room)
     })
+
+
+    
 })
 
 server.listen(port,()=>{

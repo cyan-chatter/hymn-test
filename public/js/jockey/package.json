@@ -1,0 +1,19 @@
+{
+  "name": "jockey",
+  "version": "1.0.0",
+  "description": "",
+  "main": "jockey.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "watchify jockey.js -o swan.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "spotify-web-api-node": "^5.0.2",
+    "watchify": "^4.0.0"
+  },
+  "devDependencies": {
+    "browserify": "^17.0.0"
+  }
+}
