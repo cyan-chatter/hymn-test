@@ -14,8 +14,6 @@ require('dotenv').config({ path: `${__dirname}/dev.env` })
 const SpotifyWebApi = require("spotify-web-api-node")
 const lyricsFinder = require("lyrics-finder")
 
-var browserify = require('browserify-middleware');
-
 app.use(cors())
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
