@@ -24,6 +24,7 @@ function jockey(){
     if(auth.accessToken){
       localStorage.setItem("accessToken", auth.accessToken)  
       spotifyApi.setAccessToken(auth.accessToken)
+      console.log("accessToken: ", auth.accessToken)
       if(!isexe) execute()
     }
   }
@@ -78,18 +79,18 @@ function jockey(){
                 title: track.name,
                 uri: track.uri
               }
+              console.log(song)
               queue.enqueue(song)
+
+
+              
+
           }
-          console.log(queue.peek())
           
-        })
-
-        
 
 
-    
 
-        
+        }).catch(err => console.log(err))
       })
     })
     

@@ -28,8 +28,6 @@ module.exports = async function (commandText,io,room,player,socketId,ss){
     const input = argstext.split(" ").slice(1).join(" ")
     const command = argstext.split(" ", 2)[0]
     const clients = getClients(io,room,socketId)
-    console.log(command)
-    console.log(input)
     /*
     input : input argument
     io : socket io
